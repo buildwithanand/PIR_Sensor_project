@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Motion Light Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f6f8fa;
+      margin: 0;
+      padding: 20px;
+    }
+    h2 {
+      text-align: center;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background: white;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background: #333;
+      color: white;
+    }
+    #chart {
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <h2>💡 Motion Sensor Light Logs</h2>
+
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Start Time</th><th>End Time</th><th>Duration (s)</th></tr>
+    </thead>
+    <tbody id="logtable"></tbody>
+  </table>
+
+  <h3>Last 10 Light ON Durations</h3>
+  <canvas id="chart" width="600" height="200"></canvas>
+
+<script>
+let chart;
+
+async function loadLogs() {
+  const res = await fetch('/api/logs');
+  const logs = await res.json();
+  const tbody = document.getElementById('logtable');
+  tbody.innerHTML = '';
+
+  const labels = [], data = [];
+
+  logs.slice(0, 10).reverse().forEach(l => {
+    const row = `<tr>
+      <td>${l.id}</td>
+      <td>${new Date(l.start).toLocaleString()}</td>
+      <td>${new Date(l.end).toLocaleString()}</td>
+      <td>${l.duration.toFixed(1)}</td>
+    </tr>`;
+    tbody.innerHTML += row;
+    labels.push(new Date(l.start).toLocaleTimeString());
+    data.push(l.duration);
+  });
+
+  const ctx = document.getElementById('chart').getContext('2d');
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Light ON Duration (seconds)',
+        data: data,
+        backgroundColor: '#4CAF50'
+      }]
+    },
+    options: {
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+
+loadLogs();
+setInterval(loadLogs, 5000);
+</script>
+</body>
+</html>
